@@ -6,7 +6,7 @@ from __future__ import print_function
 import os, sys, h5py
 import pandas as pd
 import numpy as np
-import bedtools, meme
+from . import bedtools, meme
 
 
 def make_directory(base_path, dir_name):
@@ -32,61 +32,73 @@ def parse_fasta_sequences(seq_path):
     return sequences
 
 
-def extract_fasta_sequences(bed_path, genome_path, window=64):
+def bedfile_enforce_constant_size(bed_path, window, strand_index=3):
+    # load bed file
+
+    f = open(bed_path + '.bed', 'rb')
+    df = pd.read_table(f, header=None)
+    chrom = df[0].as_matrix().astype(str)
+    start = df[1].as_matrix()
+    end = df[2].as_matrix()
+
+    # calculate center point and create dataframe
+    middle = np.round((start + end)/2).astype(int)
+    half_window = np.round(window/2).astype(int)
+
+    # calculate new start and end points
+    start = middle - half_window
+    end = middle + half_window
+
+    # filter any negative start positions
+    index = np.where(middle - half_window > 0)[0]
+    start = start[index]
+    end = end[index]
+    chrom = chrom[index]
+
+    if strand_index == 5:
+        name = df[3].as_matrix()[index]
+        name2 = df[4].as_matrix()[index]
+        strand = df[strand_index].as_matrix()[index]
+        # create new dataframe
+        df_new = pd.DataFrame({'a': chrom, 'b': start,  'c': end, 'd': name, 'e': name2, 'f':strand});
+    
+    else:
+        strand = df[strand_index].as_matrix()[index]
+        name = strand
+        name2 = strand
+
+        # create new dataframe
+        df_new = pd.DataFrame({'a': chrom, 'b': start,  'c': end, 'd':strand});
+
+    # save dataframe with fixed width window size to a bed file
+    output_path = bed_path + '_' + str(window) + '.bed'
+    df_new.to_csv(output_path, sep='\t', header=None, index=False)
+    return output_path
+
+
+
+def extract_fasta_sequences(bed_path, genome_path, window=None):
     """process bed file to a constand window and then extract sequences
         from reference genome 
     """
-    def bedfile_enforce_constant_size(bed_path, window):
-        # load bed file
-        f = open(bed_path + '.bed', 'rb')
-        df = pd.read_table(f, header=None)
-        chrom = df[0].as_matrix().astype(str)
-        start = df[1].as_matrix()
-        end = df[2].as_matrix()
-
-        # calculate center point and create dataframe
-        middle = np.round((start + end)/2).astype(int)
-        half_window = np.round(window/2).astype(int)
-
-        # calculate new start and end points
-        start = middle - half_window
-        end = middle + half_window
-
-        # filter any negative start positions
-        index = np.where(middle - half_window > 0)[0]
-        start = start[index]
-        end = end[index]
-        chrom = chrom[index]
-
-        # create new dataframe
-        df_new = pd.DataFrame({'a': chrom, 'b': start,  'c': end});
-
-        # save dataframe with fixed width window size to a bed file
-        output_path = bed_path + '_' + str(window)
-        df_new.to_csv(output_path + '.bed', sep='\t', header=None, index=False)
-        return output_path
-
-    # generate new bed file with constant window sizes
-    window_pos_path = bedfile_enforce_constant_size(bed_path, window)
 
     # extract sequences from reference genome and store in fasta file
-    bedtools.getfasta(window_pos_path+'.bed', window_pos_path+'.fa', genome_path)
+    bedtools.getfasta(bed_path+'.bed', bed_path+'.fa', genome_path)
 
     # parse sequence and chromosome from fasta file
-    sequences = parse_fasta_sequences(window_pos_path+'.fa')    
+    sequences = parse_fasta_sequences(bed_path+'.fa')    
 
-    return sequences, window_pos_path
+    return sequences
 
 
-def process_background_sequences(bed_file_path, genome_path, window, background='dinuc', verbose=0):
+def process_background_sequences(bed_file_path, genome_path, window=None, background='dinuc', verbose=0):
 
     # generate different backgrounds
     #backgrounds = ['genome', 'dinuc', 'random']
 
     if background == 'nonspecific':
         # background sequences derived from genomic sequences
-        neg_sequences, window_neg_path = process_bed_files(bed_file_path, genome_path, window)
-        background_path = window_neg_path + '.fa'
+        neg_sequences = extract_fasta_sequences(bed_file_path, genome_path)
 
     elif background == 'dinuc':
         # background sequences derived from dinucleotide shuffle

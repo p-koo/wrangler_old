@@ -39,14 +39,13 @@ def nonoverlap(file_path, rep_paths, ouput_path, options=['-wa', '-s'], verbose=
 
     # make string list of replicate paths
     rep_path = ''
-    if isattribute(rep_paths, (list, tuple)):
+    if isinstance(rep_paths, (list, tuple)):
         for path in rep_paths:
-            rep_path = rep_path + ' '
+            rep_path = rep_path + path + ' '
     else:
         rep_path = rep_paths
 
-    cmd = 'bedtools intersect '+options_str+'-a '+file_path+' -b '+
-                rep_path+'-v > '+ouput_path
+    cmd = 'bedtools intersect '+options_str+'-a '+file_path+' -b '+rep_path+'-v > '+ouput_path
     if verbose:
         print('>>' + cmd)
     os.system(cmd)
@@ -61,9 +60,9 @@ def overlap(file_path, rep_paths, output_path, options=['-wa', '-wb', '-s'], ver
 
     # make string list of replicate paths
     rep_path = ''
-    if isattribute(rep_paths, (list, tuple)):
+    if isinstance(rep_paths, (list, tuple)):
         for path in rep_paths:
-            rep_path = rep_path + ' '
+            rep_path = rep_path + path + ' '
     else:
         rep_path = rep_paths
 
@@ -73,7 +72,7 @@ def overlap(file_path, rep_paths, output_path, options=['-wa', '-wb', '-s'], ver
     os.system(cmd)
 
 
-def getfasta(bed_path, output_fasta, genome_path)    
+def getfasta(bed_path, output_fasta, genome_path):    
     # extract sequences from bed files and save as fasta file 
     os.system('bedtools getfasta -s -fi '+genome_path+' -bed '+bed_path+' -fo '+output_fasta)
 

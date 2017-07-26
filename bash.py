@@ -9,8 +9,16 @@ def correlation_filter(bed_path, output_path, signals=[5, 12], equality='<', thr
     """filter based on: (2*(rep1 - rep2)/(rep1 + rep2))**2 < 1.0"""
     signal1 = str(signals[0])
     signal2 = str(signals[1])
-    cmd = "cat "+bed_path+" | awk '{ if ((2*($"+signal1+"-$"+signal2+")/($"+signal1"+$"+signal2+"))^2 "+ equality + " "
-            +str(threshold)+") print $0}' > "+output_path
+    cmd = "cat "+bed_path+" | awk '{ if ((2*($"+signal1+"-$"+signal2+")/($"+signal1+"+$"+signal2+"))^2 "+equality+" "+str(threshold)+") print $0}' > "+output_path
+    if verbose:
+        print('>>' + cmd)
+    os.system(cmd)
+
+
+def positive_filter(bed_path, output_path, signal=6, threshold=3.0, verbose=1):
+
+    """filter based on: signal > threshold"""
+    cmd = "cat "+bed_path+" | awk '{ if ($"+str(signal)+" > "+str(threshold)+") print $0}' > "+output_path
     if verbose:
         print('>>' + cmd)
     os.system(cmd)
