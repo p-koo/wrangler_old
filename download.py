@@ -7,25 +7,6 @@ import os, sys
 
 def reference_genome(genome, data_path):
 
-    def download_file(link, output_path=None):
-        # download files with wget
-        if output_path:
-            if not os.path.isfile(output_path):
-                os.system('wget -O ' + output_path + ' ' + link)
-        else:
-            os.system('wget ' + link)
-
-    def convert_2bit_to_fa(data_path, genome):
-        # download twoBitToFa file to convert genomes
-        twobit_path = os.path.join(data_path, 'twoBitToFa')
-        if not os.path.isfile(twobit_path): 
-            link = 'http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/twoBitToFa'
-            download_file(link, twobit_path)
-            os.system('chmod +x ' + twobit_path)
-
-        # convert 2bit files to fasta
-        genome_path = os.path.join(data_path, genome)
-        os.system(twobit_path + ' ' + genome_path+'.2bit ' + genome_path+'.fa')
 
     if genome == 'hg19':
         genome_link = 'http://hgdownload.cse.ucsc.edu/goldenPath/hg19/bigZips/hg19.2bit'
@@ -43,4 +24,33 @@ def reference_genome(genome, data_path):
     genome_path = convert_2bit_to_fa(data_path, genome)
     
 
+def download_file(link, output_path=None):
+    # download files with wget
+    if output_path:
+        if not os.path.isfile(output_path):
+            os.system('wget -O ' + output_path + ' ' + link)
+    else:
+        os.system('wget ' + link)
 
+
+def convert_2bit_to_fa(data_path, genome):
+    # download twoBitToFa file to convert genomes
+    twobit_path = os.path.join(data_path, 'twoBitToFa')
+    if not os.path.isfile(twobit_path): 
+        link = 'http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/twoBitToFa'
+        download_file(link, twobit_path)
+        os.system('chmod +x ' + twobit_path)
+
+    # convert 2bit files to fasta
+    genome_path = os.path.join(data_path, genome)
+    os.system(twobit_path + ' ' + genome_path+'.2bit ' + genome_path+'.fa')
+
+
+def reference_transcriptome(transcriptome, data_path):
+
+    if transcriptome == 'hg38':
+        genome_link = 'ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_26/gencode.v26.annotation.gtf.gz'
+
+    # download file
+    genome_path = os.path.join(data_path, 'gencode.v26.annotation.gtf.gz')
+    download_file(genome_link, genome_path)

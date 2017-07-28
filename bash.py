@@ -55,4 +55,9 @@ def move_files(file_names, old_path, new_path, ext=None):
 
 
 
+def convert_grf_to_bed(file_path, verbose=1):
+    cmd = """ awk '{if ($3 == "transcript") print $1"\t"$4"\t"$5"\t"$12"\t"($5-$4)"\t"$7}' gencode.v26.annotation.gtf | sed 's:"::g' | sed 's:;::g' >> gencode.v26.annotation.bed"""
+    if verbose:
+        print('>>' + cmd)
+    os.command(cmd)
 

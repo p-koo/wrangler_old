@@ -14,3 +14,9 @@ def shuffle(fasta_path, output_path, kmer=2, verbose=1):
     os.system(cmd)    
 
 
+def find_motifs(fasta_path, output_path, mod='zoops', alphabet='rna', minw=6, maxw=25, options=None):
+
+    cmd = 'meme '+fasta_path+' -'+alphabet+' -mod '+mod+' -nmotifs '+str(nmotifs)+' -minw '+str(minw)+' -maxw '+str(maxw)+' -oc '+output_path+' '+options 
+    if verbose:
+        print('>>' + cmd)
+    os.system(cmd)

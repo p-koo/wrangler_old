@@ -32,10 +32,10 @@ def parse_fasta_sequences(seq_path):
     return sequences
 
 
-def bedfile_enforce_constant_size(bed_path, window, strand_index=3):
+def bedfile_enforce_constant_size(bed_path, output_path, window):
     # load bed file
 
-    f = open(bed_path + '.bed', 'rb')
+    f = open(bed_path, 'rb')
     df = pd.read_table(f, header=None)
     chrom = df[0].as_matrix().astype(str)
     start = df[1].as_matrix()
@@ -51,42 +51,30 @@ def bedfile_enforce_constant_size(bed_path, window, strand_index=3):
 
     # filter any negative start positions
     index = np.where(middle - half_window > 0)[0]
-    start = start[index]
-    end = end[index]
-    chrom = chrom[index]
+    data = {}
+    for i in range(len(df.columns)):
+        data[i] = df[i].as_matrix()[index]
+    data[1] = start[index]
+    data[2] = end[index]
 
-    if strand_index == 5:
-        name = df[3].as_matrix()[index]
-        name2 = df[4].as_matrix()[index]
-        strand = df[strand_index].as_matrix()[index]
-        # create new dataframe
-        df_new = pd.DataFrame({'a': chrom, 'b': start,  'c': end, 'd': name, 'e': name2, 'f':strand});
-    
-    else:
-        strand = df[strand_index].as_matrix()[index]
-        name = strand
-        name2 = strand
-
-        # create new dataframe
-        df_new = pd.DataFrame({'a': chrom, 'b': start,  'c': end, 'd':strand});
+    # create new dataframe
+    df_new = pd.DataFrame(data);
 
     # save dataframe with fixed width window size to a bed file
-    output_path = bed_path + '_' + str(window) + '.bed'
     df_new.to_csv(output_path, sep='\t', header=None, index=False)
-    return output_path
 
 
 
-def extract_fasta_sequences(bed_path, genome_path, window=None):
+def extract_fasta_sequences(bed_path, fasta_path, genome_path, window=None):
     """process bed file to a constand window and then extract sequences
         from reference genome 
     """
 
     # extract sequences from reference genome and store in fasta file
-    bedtools.getfasta(bed_path+'.bed', bed_path+'.fa', genome_path)
+    bedtools.getfasta(bed_path, fasta_path, genome_path)
 
     # parse sequence and chromosome from fasta file
-    sequences = parse_fasta_sequences(bed_path+'.fa')    
+    sequences = parse_fasta_sequences(fasta_path)    
 
     return sequences
 
@@ -116,7 +104,7 @@ def process_background_sequences(bed_file_path, genome_path, window=None, backgr
         # process background sequences
         neg_sequences = parse_fasta_sequences(background_path)
 
-    return neg_sequences
+    return neg_sequence
     
 
 def convert_sequences_one_hot(sequences):
@@ -180,30 +168,43 @@ def save_dataset_hdf5(savepath, train, valid, test):
     
 
 
-def load_dataset_hdf5(file_path):
-    trainmat = h5py.File(file_path, 'r')
+def load_dataset_hdf5(file_path, dataset_name=None):
+
+    dataset = h5py.File(file_path, 'r')
     
-    # load set A data
-    X_train = np.array(trainmat['X_train']).astype(np.float32)
-    Y_train = np.array(trainmat['Y_train']).astype(np.float32)
-    X_valid = np.array(trainmat['X_valid']).astype(np.float32)
-    Y_valid = np.array(trainmat['Y_valid']).astype(np.float32)    
-    X_test = np.array(trainmat['X_test']).astype(np.float32)
-    Y_test = np.array(trainmat['Y_test']).astype(np.float32)
+    if not dataset_name:
+        # load set A data
+        X_train = np.array(dataset['X_train']).astype(np.float32)
+        Y_train = np.array(dataset['Y_train']).astype(np.float32)
+        X_valid = np.array(dataset['X_valid']).astype(np.float32)
+        Y_valid = np.array(dataset['Y_valid']).astype(np.float32)    
+        X_test = np.array(dataset['X_test']).astype(np.float32)
+        Y_test = np.array(dataset['Y_test']).astype(np.float32)
+
+    else:
+        X_train = np.array(dataset['/'+dataset_name+'/X_train']).astype(np.float32)        
+        y_train = np.array(dataset['/'+dataset_name+'/Y_train']).astype(np.float32)
+        X_valid = np.array(dataset['/'+dataset_name+'/X_valid']).astype(np.float32)       
+        y_valid = np.array(dataset['/'+dataset_name+'/Y_valid']).astype(np.float32)
+        X_test = np.array(dataset['/'+dataset_name+'/X_test']).astype(np.float32)
+        y_test = np.array(dataset['/'+dataset_name+'/Y_test']).astype(np.float32)
+
 
     # add another dimension to make a 4d tensor
-    X_train = np.expand_dims(X_train, axis=3)
-    X_test = np.expand_dims(X_test, axis=3)
-    X_valid = np.expand_dims(X_valid, axis=3)
-    #y_valid = np.expand_dims(y_valid, axis=1)
-    #y_train = np.expand_dims(y_train, axis=1)
-    #y_test = np.expand_dims(y_test, axis=1)
-    
-    # tuple data structure for training set, cross-validation set, and test set
-    train = {'inputs': X_train.transpose([0, 2, 3, 1]), 'targets': Y_train}
-    valid = {'inputs': X_valid.transpose([0, 2, 3, 1]), 'targets': Y_valid}
-    test = {'inputs': X_test.transpose([0, 2, 3, 1]), 'targets': Y_test}
+    X_train = np.expand_dims(X_train, axis=3).transpose([0, 2, 3, 1])
+    X_test = np.expand_dims(X_test, axis=3).transpose([0, 2, 3, 1])
+    X_valid = np.expand_dims(X_valid, axis=3).transpose([0, 2, 3, 1])
+
+    # dictionary for each dataset
+    train = {'inputs': X_train, 'targets': y_train}
+    valid = {'inputs': X_valid, 'targets': y_valid}
+    test = {'inputs': X_test, 'targets': y_test}
 
     return train, valid, test
 
 
+def dataset_keys_hdf5(file_path):
+
+    dataset = h5py.File(file_path, 'r')
+
+    return dataset.keys()
