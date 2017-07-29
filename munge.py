@@ -79,6 +79,18 @@ def extract_fasta_sequences(bed_path, fasta_path, genome_path, window=None):
     return sequences
 
 
+def generate_fasta(sequences, fasta_path):
+    """generate fasta file from an array of sequences
+    """
+
+    with open(fasta_path, 'w+') as f:
+        for i in xrange(len(sequences)):
+            f.write('>seq '+str(i))
+            f.write('\n')
+            f.write(sequences[i])
+            f.write('\n')
+
+
 def process_background_sequences(bed_file_path, genome_path, window=None, background='dinuc', verbose=0):
 
     # generate different backgrounds
@@ -107,23 +119,40 @@ def process_background_sequences(bed_file_path, genome_path, window=None, backgr
     return neg_sequence
     
 
-def convert_sequences_one_hot(sequences):
+def convert_sequences_one_hot(sequences, nucleotide='ACGT'):
     """convert a sequence into a 1-hot representation"""
     def convert_one_hot(seq):
-        nucleotide = 'ACGT'
         N = len(seq)
         one_hot_seq = np.zeros((4,N))
         for i in range(N):         
-            index = [j for j in range(4) if seq[i] == nucleotide[j]]
+            index = [j for j in range(4) if seq[i].upper() == nucleotide[j]]
             one_hot_seq[index,i] = 1
         return one_hot_seq
 
     # convert sequences to one-hot representation
     one_hot = []
     for seq in sequences:
-        one_hot.append(convert_one_hot(seq))
+        one_hot_seq = convert_one_hot(seq)
+        if np.sum(one_hot_seq) == len(seq):
+            one_hot.append(one_hot_seq)
     one_hot = np.array(one_hot)
     return one_hot
+
+
+def convert_one_hot_sequences(one_hots, nucleotide='ACGT'):
+    """convert 1-hot representation to sequence"""
+
+    seq_length = one_hots.shape[1]
+    seq = []
+    for one_hot in one_hots:
+        sequence = np.array(['']*seq_length)    
+        for i in range(4):
+            index = np.where(one_hot[:,i] == 1)[0]
+            sequence[index] = nucleotide[i]
+
+        seq.append(''.join(sequence))
+    return seq
+
 
 
 
@@ -206,5 +235,9 @@ def load_dataset_hdf5(file_path, dataset_name=None):
 def dataset_keys_hdf5(file_path):
 
     dataset = h5py.File(file_path, 'r')
+    keys = []
+    for key in dataset.keys():
+        keys.append(str(key))
 
-    return dataset.keys()
+    return np.array(keys)
+

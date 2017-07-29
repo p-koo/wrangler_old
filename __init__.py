@@ -7,3 +7,4 @@ from .encode import *
 from .munge import *
 from .peaks import *
 from .samtools import *
+from .structure import *
