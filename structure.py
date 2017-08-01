@@ -7,7 +7,22 @@ import pandas as pd
 import numpy as np
 
 
-def RNAplfold_profile(fasta_path, output_path, window):
+def predict_structure(fasta_path, profile_path, window):
+
+    E_path = profile_path+'E_profile.txt'
+    os.system('E_RNAplfold -W '+str(window)+' -u 1 <'+fasta_path+' >'+E_path)
+
+    H_path = profile_path+'H_profile.txt'
+    os.system('H_RNAplfold -W '+str(window)+' -u 1 <'+fasta_path+' >'+H_path)
+
+    I_path = profile_path+'I_profile.txt'
+    os.system('I_RNAplfold -W '+str(window)+' -u 1 <'+fasta_path+' >'+I_path)
+
+    M_path = profile_path+ 'M_profile.txt'
+    os.system('M_RNAplfold -W '+str(window)+' -u 1 <'+fasta_path+' >'+M_path)
+
+
+def merge_structural_profile(profile_path, merged_path):
 
     def list_to_str(lst):
         ''' Given a list, return the string of that list with tab separators 
@@ -15,34 +30,29 @@ def RNAplfold_profile(fasta_path, output_path, window):
         return reduce( (lambda s, f: s + '\t' + str(f)), lst, '')
     
     # external loop profile
-    E_path = os.path.join(output_path, 'E_profile.txt')
-    os.system('E_RNAplfold -W '+str(window)+' -u 1 <'+fasta_path+' >'+E_path)
+    E_path = profile_path+'E_profile.txt'
     fEprofile = open(E_path)
     Eprofiles = fEprofile.readlines()
 
     # hairpin loop profiles
-    H_path = os.path.join(output_path, 'H_profile.txt')
-    os.system('H_RNAplfold -W '+str(window)+' -u 1 <'+fasta_path+' >'+H_path)
+    H_path = profile_path+'H_profile.txt'
     fHprofile = open(H_path)
     Hprofiles = fHprofile.readlines()
 
     # internal loop profiles
-    I_path = os.path.join(output_path, 'I_profile.txt')
-    os.system('I_RNAplfold -W '+str(window)+' -u 1 <'+fasta_path+' >'+I_path)
+    I_path = profile_path+'I_profile.txt'
     fIprofile = open(I_path)
     Iprofiles = fIprofile.readlines()
 
     # multi-loop profiles
-    M_path = os.path.join(output_path, 'M_profile.txt')
-    os.system('M_RNAplfold -W '+str(window)+' -u 1 <'+fasta_path+' >'+M_path)
+    M_path = profile_path+ 'M_profile.txt'
     fMprofile = open(M_path)
     Mprofiles = fMprofile.readlines()
 
     num_seq = int(len(Eprofiles)/2)
     
     # parse into a single file
-    profile_path = os.path.join(output_path,'structure_profiles.txt')
-    fhout = open(profile_path, 'w')
+    fhout = open(merged_path, 'w')
     for i in xrange(num_seq):
         id = Eprofiles[i*2].split()[0]
         fhout.write(id+'\n')
@@ -58,8 +68,13 @@ def RNAplfold_profile(fasta_path, output_path, window):
         fhout.write(list_to_str(E_prob[:len(P_prob)])+'\n')
     fhout.close()
 
+    return num_seq
+
+
+def extract_structural_profile(merged_path, num_seq):
+
     # parse further and load structural profile as np.array
-    f = open(profile_path, 'r')
+    f = open(merged_path, 'r')
     structure = []
     for i in xrange(num_seq):
         seq = f.readline()
@@ -79,3 +94,18 @@ def RNAplfold_profile(fasta_path, output_path, window):
         structure.append(np.array([paired, hairpin, internal, multi, external]))
 
     return np.array(structure)
+
+
+
+def RNAplfold_profile(fasta_path, profile_path, window):
+
+    # predict secondary structural profiles
+    predict_structure(fasta_path, profile_path, window)
+ 
+    # generate merged secondary structure profile 
+    merged_path = profile_path+'structure_profiles.txt'
+    num_seq = merge_structural_profile(profile_path, merged_path)
+
+    structure = extract_structural_profile(merged_path, num_seq)
+
+    return structure

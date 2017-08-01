@@ -32,6 +32,21 @@ def parse_fasta_sequences(seq_path):
     return sequences
 
 
+
+def filter_nonsense_sequences(sequences):
+    """Parse fasta file for sequences"""
+
+    # parse sequence and chromosome from fasta file
+    good_index = [] 
+    filter_sequences = []
+    for i, seq in enumerate(sequences):
+        if 'N' not in seq.upper():
+            good_index.append(i)
+            filter_sequences.append(seq)
+    return np.array(filter_sequences), np.array(good_index)
+
+
+
 def bedfile_enforce_constant_size(bed_path, output_path, window):
     # load bed file
 
@@ -50,12 +65,11 @@ def bedfile_enforce_constant_size(bed_path, output_path, window):
     end = middle + half_window
 
     # filter any negative start positions
-    index = np.where(middle - half_window > 0)[0]
     data = {}
     for i in range(len(df.columns)):
-        data[i] = df[i].as_matrix()[index]
-    data[1] = start[index]
-    data[2] = end[index]
+        data[i] = df[i].as_matrix()
+    data[1] = start
+    data[2] = end
 
     # create new dataframe
     df_new = pd.DataFrame(data);
@@ -180,8 +194,9 @@ def split_dataset(one_hot, labels, valid_frac=0.1, test_frac=0.2):
     train = (one_hot[train_index], labels[train_index,:])
     valid = (one_hot[valid_index], labels[valid_index,:])
     test = (one_hot[test_index], labels[test_index,:])
+    indices = [train_index, valid_index, test_index]
 
-    return train, valid, test
+    return train, valid, test, indices
 
 
 def save_dataset_hdf5(savepath, train, valid, test):
@@ -204,11 +219,11 @@ def load_dataset_hdf5(file_path, dataset_name=None):
     if not dataset_name:
         # load set A data
         X_train = np.array(dataset['X_train']).astype(np.float32)
-        Y_train = np.array(dataset['Y_train']).astype(np.float32)
+        y_train = np.array(dataset['Y_train']).astype(np.float32)
         X_valid = np.array(dataset['X_valid']).astype(np.float32)
-        Y_valid = np.array(dataset['Y_valid']).astype(np.float32)    
+        y_valid = np.array(dataset['Y_valid']).astype(np.float32)    
         X_test = np.array(dataset['X_test']).astype(np.float32)
-        Y_test = np.array(dataset['Y_test']).astype(np.float32)
+        y_test = np.array(dataset['Y_test']).astype(np.float32)
 
     else:
         X_train = np.array(dataset['/'+dataset_name+'/X_train']).astype(np.float32)        
@@ -241,3 +256,57 @@ def dataset_keys_hdf5(file_path):
 
     return np.array(keys)
 
+
+def conservation_bed(bed_path, conservation_path):
+    
+    df = pd.read_csv(bed_path, sep='\t', header=None)
+    chrom = df[0].as_matrix()
+    start = df[1].as_matrix()
+    end = df[2].as_matrix()
+    strand = df[3].as_matrix()
+
+    dataset = h5py.File(conservation_path, 'r')
+
+    conservation = []
+    good_index = []
+    for i in range(len(chrom)):
+        if str(chrom[i]) in dataset.keys():
+            good_index.append(i)
+            conservation.append(np.array(dataset[chrom[i]][start[i]:end[i]]))     
+            
+    good_index = np.array(good_index)
+    conservation = np.array(conservation)
+    return conservation, good_index
+
+
+
+def conservation_bed_all(bed_path, phylop_path, phastcons_path, good_index):
+    
+    df = pd.read_csv(bed_path, sep='\t', header=None)
+    chrom = df[0].as_matrix()
+    start = df[1].as_matrix()
+    end = df[2].as_matrix()
+    strand = df[3].as_matrix()
+
+    dataset1 = h5py.File(phylop_path, 'r')
+    dataset2 = h5py.File(phastcons_path, 'r')
+
+    conservation1 = []
+    conservation2 = []
+    valid_index = []
+    filter_index = []
+    for j, i in enumerate(good_index):
+        if (str(chrom[i]) in dataset1.keys()) & (str(chrom[i]) in dataset2.keys()):
+            valid_index.append(i)
+            conservation1.append(np.array(dataset1[chrom[i]][start[i]:end[i]]))     
+            conservation2.append(np.array(dataset2[chrom[i]][start[i]:end[i]]))     
+            filter_index.append(j)
+
+    filter_index = np.array(filter_index)
+    valid_index = np.array(valid_index)
+    conservation1 = np.array(conservation1)
+    conservation2 = np.array(conservation2)
+
+    return conservation1, conservation2, valid_index, filter_index
+
+    

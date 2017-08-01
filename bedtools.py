@@ -24,7 +24,7 @@ def sort(file_path, output_path, verbose=1):
 
 def merge(file_path, output_path, verbose=1):    
     # merge bed file coordinates
-    cmd = 'bedtools merge -i '+file_path+' -s > '+output_path
+    cmd = 'bedtools merge -i '+file_path+" -s | awk '{print $1\"\\t\"$2\"\\t\"$3\"\\tMergedPeak\"NR\"\\t\"($3-$2)\"\\t\"$4}' > "+output_path
     if verbose:
         print('>>' + cmd)
     os.system(cmd)
