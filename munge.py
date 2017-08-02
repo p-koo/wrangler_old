@@ -293,20 +293,13 @@ def conservation_bed_all(bed_path, phylop_path, phastcons_path, good_index):
 
     conservation1 = []
     conservation2 = []
-    valid_index = []
-    filter_index = []
     for j, i in enumerate(good_index):
-        if (str(chrom[i]) in dataset1.keys()) & (str(chrom[i]) in dataset2.keys()):
-            valid_index.append(i)
-            conservation1.append(np.array(dataset1[chrom[i]][start[i]:end[i]]))     
-            conservation2.append(np.array(dataset2[chrom[i]][start[i]:end[i]]))     
-            filter_index.append(j)
+        conservation1.append(np.array(dataset1[chrom[i]][start[i]:end[i]]))     
+        conservation2.append(np.array(dataset2[chrom[i]][start[i]:end[i]]))     
 
-    filter_index = np.array(filter_index)
-    valid_index = np.array(valid_index)
     conservation1 = np.array(conservation1)
     conservation2 = np.array(conservation2)
 
-    return conservation1, conservation2, valid_index, filter_index
+    return conservation1, conservation2
 
     
