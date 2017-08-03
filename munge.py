@@ -303,3 +303,10 @@ def conservation_bed_all(bed_path, phylop_path, phastcons_path, good_index):
     return conservation1, conservation2
 
     
+
+def count_bed_entries(file_path):
+    with open(file_path, 'r') as f:
+        counts = 0
+        for line in f:
+            counts += 1
+    return counts

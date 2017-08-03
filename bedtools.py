@@ -45,7 +45,7 @@ def nonoverlap(file_path, rep_paths, ouput_path, options=['-wa', '-s'], verbose=
     else:
         rep_path = rep_paths
 
-    cmd = 'bedtools intersect '+options_str+'-a '+file_path+' -b '+rep_path+'-v > '+ouput_path
+    cmd = 'bedtools intersect '+options_str+'-a '+file_path+' -b '+rep_path+' -v > '+ouput_path
     if verbose:
         print('>>' + cmd)
     os.system(cmd)
