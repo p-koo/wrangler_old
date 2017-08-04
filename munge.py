@@ -280,6 +280,29 @@ def conservation_bed(bed_path, conservation_path):
 
 
 
+def conservation_bed_all2(bed_path, phylop_path, phastcons_path):
+    
+    df = pd.read_csv(bed_path, sep='\t', header=None)
+    chrom = df[0].as_matrix()
+    start = df[1].as_matrix()
+    end = df[2].as_matrix()
+    strand = df[3].as_matrix()
+
+    dataset1 = h5py.File(phylop_path, 'r')
+    dataset2 = h5py.File(phastcons_path, 'r')
+
+    conservation1 = []
+    conservation2 = []
+    for i in range(len(chrom)):
+        conservation1.append(np.array(dataset1[chrom[i]][start[i]:end[i]]))     
+        conservation2.append(np.array(dataset2[chrom[i]][start[i]:end[i]]))     
+
+    conservation1 = np.array(conservation1)
+    conservation2 = np.array(conservation2)
+
+    return conservation1, conservation2
+
+
 def conservation_bed_all(bed_path, phylop_path, phastcons_path, good_index):
     
     df = pd.read_csv(bed_path, sep='\t', header=None)
