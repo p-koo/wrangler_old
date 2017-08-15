@@ -284,8 +284,8 @@ def conservation_bed_all2(bed_path, phylop_path, phastcons_path):
     
     df = pd.read_csv(bed_path, sep='\t', header=None)
     chrom = df[0].as_matrix()
-    start = df[1].as_matrix()
-    end = df[2].as_matrix()
+    start = df[1].as_matrix()-1
+    end = df[2].as_matrix()-1
     strand = df[3].as_matrix()
 
     dataset1 = h5py.File(phylop_path, 'r')
@@ -307,8 +307,8 @@ def conservation_bed_all(bed_path, phylop_path, phastcons_path, good_index):
     
     df = pd.read_csv(bed_path, sep='\t', header=None)
     chrom = df[0].as_matrix()
-    start = df[1].as_matrix()
-    end = df[2].as_matrix()
+    start = df[1].as_matrix()-1
+    end = df[2].as_matrix()-1
     strand = df[3].as_matrix()
 
     dataset1 = h5py.File(phylop_path, 'r')
@@ -333,3 +333,36 @@ def count_bed_entries(file_path):
         for line in f:
             counts += 1
     return counts
+
+
+
+def prepare_data(train, struct=None, conservation=None):
+    seq = train['inputs'][:,:,:,:4]
+    if struct == 'pu':     
+        structure = train['inputs'][:,:,:,4:9]
+        paired = np.expand_dims(structure[:,:,:,0], axis=3)
+        unpaired = np.expand_dims(np.sum(structure[:,:,:,1:], axis=3), axis=3)
+        seq = np.concatenate([seq, paired, unpaired], axis=3)
+    elif struct == 'all':    
+        structure = train['inputs'][:,:,:,4:9]
+        paired = np.expand_dims(structure[:,:,:,0], axis=3)
+        HIME = structure[:,:,:,1:]
+        seq = np.concatenate([seq, paired, HIME], axis=3)
+
+    if conservation == 'phylop':
+        phylop = np.expand_dims(train['inputs'][:,:,:,9], axis=3)
+        phylop /= np.std(phylop)
+        seq = np.concatenate([seq, phylop], axis=3)
+    elif conservation == 'phastcon':
+        phastcon = np.expand_dims(train['inputs'][:,:,:,10], axis=3)
+        seq = np.concatenate([seq, phastcon], axis=3)
+    elif conservation == 'all':
+        phylop = np.expand_dims(train['inputs'][:,:,:,9], axis=3)
+        phylop /= np.std(phylop)
+        phastcon = np.expand_dims(train['inputs'][:,:,:,10], axis=3)
+        seq = np.concatenate([seq, phylop, phastcon], axis=3)
+
+    train['inputs']  = seq
+    return train
+
+    
