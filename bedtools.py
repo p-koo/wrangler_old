@@ -72,44 +72,48 @@ def overlap(file_path, rep_paths, output_path, options=['-wa', '-wb', '-s'], ver
     os.system(cmd)
 
 
-def getfasta(bed_path, output_fasta, genome_path):    
+def enforce_constant_size(bed_path, output_path, window):
+    # load bed file
+
+    f = open(bed_path, 'rb')
+    df = pd.read_table(f, header=None)
+    chrom = df[0].as_matrix().astype(str)
+    start = df[1].as_matrix()
+    end = df[2].as_matrix()
+
+    # calculate center point and create dataframe
+    middle = np.round((start + end)/2).astype(int)
+    half_window = np.round(window/2).astype(int)
+
+    # calculate new start and end points
+    start = middle - half_window
+    end = middle + half_window
+
+    # filter any negative start positions
+    data = {}
+    for i in range(len(df.columns)):
+        data[i] = df[i].as_matrix()
+    data[1] = start
+    data[2] = end
+
+    # create new dataframe
+    df_new = pd.DataFrame(data);
+
+    # save dataframe with fixed width window size to a bed file
+    df_new.to_csv(output_path, sep='\t', header=None, index=False)
+
+
+def count_bed_entries(file_path):
+    with open(file_path, 'r') as f:
+        counts = 0
+        for line in f:
+            counts += 1
+    return counts
+
+
+def to_fasta(bed_path, output_fasta, genome_path):    
     # extract sequences from bed files and save as fasta file 
     os.system('bedtools getfasta -s -fi '+genome_path+' -bed '+bed_path+' -fo '+output_fasta)
 
 
 
-
-"""
-
-def filter_overlap_signalValue(nonspecific_overlap_path, filter_path, threshold=1.0, verbose=1):
-    # filter based on: (2*(rep1 - rep2)/(rep1 + rep2))**2 < 1.0
-        
-    df_nonspecific = pd.read_csv(nonspecific_overlap_path, sep='\t', header=None)
-    df_nonspecific.head()
-    rep1_nonspecific = df_nonspecific[4].as_matrix()
-    rep2_nonspecific = df_nonspecific[11].as_matrix()
-    chr_nonspecific = df_nonspecific[7].as_matrix()
-    start_nonspecific = df_nonspecific[8].as_matrix()
-    end_nonspecific = df_nonspecific[9].as_matrix()
-
-    df_filtered = pd.read_csv(filter_path, sep='\t', header=None)
-    df_filtered.head()
-    rep1_filtered = df_filtered[4].as_matrix()
-    rep2_filtered = df_filtered[11].as_matrix()
-    chr_filtered = df_filtered[0].as_matrix()
-    start_filtered = df_filtered[1].as_matrix()
-    end_filtered = df_filtered[2].as_matrix()
-
-
-    error = 2*(rep1_nonspecific-rep2_nonspecific)/(rep1_nonspecific+rep2_nonspecific)
-
-    filtered_index = []
-    for i in range(len(chr_filtered)):
-        index = np.where((chr_filtered[i] == chr_nonspecific) & 
-                         (start_filtered[i] == start_nonspecific) & 
-                         (end_filtered[i] == end_nonspecific))[0]
-        if index.any():
-            for j in index:
-                filtered_index.append(j)
-    filtered_index = np.unique(filtered_index)
-"""

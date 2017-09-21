@@ -22,6 +22,7 @@ def predict_structure(fasta_path, profile_path, window):
     os.system('M_RNAplfold -W '+str(window)+' -u 1 <'+fasta_path+' >'+M_path)
 
 
+
 def merge_structural_profile(profile_path, merged_path):
 
     def list_to_str(lst):
@@ -103,7 +104,7 @@ def RNAplfold_profile(fasta_path, profile_path, window):
     predict_structure(fasta_path, profile_path, window)
  
     # generate merged secondary structure profile 
-    merged_path = profile_path+'structure_profiles.txt'
+    merged_path = profile_path+'_structure_profiles.txt'
     num_seq = merge_structural_profile(profile_path, merged_path)
 
     structure = extract_structural_profile(merged_path, num_seq)
