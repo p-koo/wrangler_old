@@ -72,7 +72,7 @@ def merge_structural_profile(profile_path, merged_path):
     return num_seq
 
 
-def extract_structural_profile(merged_path, num_seq):
+def extract_structural_profile(merged_path, num_seq, window):
 
     # parse further and load structural profile as np.array
     f = open(merged_path, 'r')
@@ -92,7 +92,17 @@ def extract_structural_profile(merged_path, num_seq):
         multi = np.array(multi).astype(np.float32)
         external = np.array(external).astype(np.float32)
 
-        structure.append(np.array([paired, hairpin, internal, multi, external]))
+        # pad sequences
+        seq_length = len(paired)
+        offset1 = int((window - seq_length)/2)
+        offset2 = window - seq_length - offset1
+        struct = np.array([paired, hairpin, internal, multi, external])
+        num_dims = struct.shape[0]
+        if offset1:
+            struct = np.hstack([np.zeros((num_dims,offset1)), struct])
+        if offset2:
+            struct = np.hstack([struct, np.zeros((num_dims,offset2))])
+        structure.append(struct)
 
     return np.array(structure)
 
@@ -107,6 +117,7 @@ def RNAplfold_profile(fasta_path, profile_path, window):
     merged_path = profile_path+'_structure_profiles.txt'
     num_seq = merge_structural_profile(profile_path, merged_path)
 
-    structure = extract_structural_profile(merged_path, num_seq)
+    # extract secondary structure profiles 
+    structure = extract_structural_profile(merged_path, num_seq, window)
 
     return structure

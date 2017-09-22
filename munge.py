@@ -24,7 +24,7 @@ def convert_one_hot(sequence, max_length):
         one_hot[2,index] = 1
         index = [j for j in xrange(seq_length) if (seq[j] == 'U') | (seq[j] == 'T')]
         one_hot[3,index] = 1
-        offset1 = ((max_length - seq_length)/2).astype(int)
+        offset1 = int((max_length - seq_length)/2)
         offset2 = max_length - seq_length - offset1
 
         if offset1:
