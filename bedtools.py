@@ -3,6 +3,8 @@ from __future__ import division
 from __future__ import print_function
 
 import os, sys
+import numpy as np
+import pandas as pd
 
 def bam_to_bed(bam_path, bed_path, verbose=1):
     """ Bam file to bed file conversion """
