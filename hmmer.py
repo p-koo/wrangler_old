@@ -8,11 +8,14 @@ from Bio import SearchIO
 
 
 
-def build(file_path, model_path, options=None, verbose=1):
+def build(file_path, model_path, options=[], verbose=1):
 
     options_str = ''
-    for option in options:
-        options_str += option+ ' '
+    for option in options:        
+        if isinstance(option, (list, tuple)):
+            options_str += option[0] + ' ' + option[1] + ' '
+        else:
+            options_str += option+ ' '
 
         rep_path = rep_paths
 
@@ -22,11 +25,14 @@ def build(file_path, model_path, options=None, verbose=1):
     os.system(cmd)
 
 
-def search(file_path, model_path, output_path, options=None, verbose=1):
+def search(file_path, model_path, output_path, options=[], verbose=1):
 
     options_str = ''
     for option in options:
-        options_str += option+ ' '
+        if isinstance(option, (list, tuple)):
+            options_str += option[0] + ' ' + option[1] + ' '
+        else:
+            options_str += option+ ' '
 
     cmd = 'hmmsearch ' + options_str + ' -o ' + output_path + ' ' + model_path + ' ' + file_path
     if verbose:
@@ -49,4 +55,10 @@ def parse_results(file_path):
                 evalues[i] = hits[i].evalue 
     return names, scores, evalues
 
-    
+
+def reformat(file_path, output_path, file_format='stockholm'):
+    #esl-reformat -o PF00011_train.sto stockholm PF00011_full_train.fa 
+    cmd = 'esl-reformat -o ' + output_path + ' ' + file_format + ' ' + file_path
+    if verbose:
+        print('>>' + cmd)
+    os.system(cmd)
