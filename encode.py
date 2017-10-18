@@ -8,10 +8,11 @@ import pandas as pd
 
 
 def parse_metadata(meta_data_path, parse_list=None, genome=None, file_format=None):
+    """Parse the metadata.tsv file that comes with a download data from ENCODE"""
     if not parse_list:
         parse_list = ['File accession', 'Experiment accession', 'Biological replicate(s)',
                       'Experiment target', 'Biosample term name']
-                      
+
     # open meta file
     df = pd.read_csv(meta_data_path, sep='\t')
 
@@ -19,7 +20,7 @@ def parse_metadata(meta_data_path, parse_list=None, genome=None, file_format=Non
     values = {}
     for item in parse_list:
         values[item] = df[item].as_matrix()
-    
+
     if genome:
         # filter for GRCh38
         assembly = df['Assembly'].as_matrix()
@@ -41,16 +42,11 @@ def parse_metadata(meta_data_path, parse_list=None, genome=None, file_format=Non
 
 
 def match_control_experiments(targets, cell_types, targets_control, cell_types_control):
-    # find which experiments match control experiments via target and cell-type 
+    """find the indices of the control experiments that match the experiment"""
+
+    # find which experiments match control experiments via target and cell-type
 
     index = np.where(targets_control[:targets_control.index(' ')] == targets)[0]
     match_index = index[np.where(cell_types_control == cell_types[index])[0]]
 
     return match_index
-
-
-
-
-
-
-

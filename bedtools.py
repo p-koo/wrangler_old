@@ -12,20 +12,22 @@ def bam_to_bed(bam_path, bed_path, verbose=1):
     command = 'bedtools bamtobed -i ' + bam_path + ' > ' + bed_path
     if verbose:
         print('>>' + command)
-    
+
     os.system(command)
 
 
-def sort(file_path, output_path, verbose=1):    
-    # merge bed file coordinates
+def sort(file_path, output_path, verbose=1):
+    """sort bedfile"""
+
     cmd = 'sortBed -i '+file_path+' > '+output_path
     if verbose:
         print('>>' + cmd)
     os.system(cmd)
 
 
-def merge(file_path, output_path, verbose=1):    
-    # merge bed file coordinates
+def merge(file_path, output_path, verbose=1):
+    """merge bed file coordinates"""
+
     cmd = 'bedtools merge -i '+file_path+" -s | awk '{print $1\"\\t\"$2\"\\t\"$3\"\\tMergedPeak\"NR\"\\t\"($3-$2)\"\\t\"$4}' > "+output_path
     if verbose:
         print('>>' + cmd)
@@ -33,7 +35,7 @@ def merge(file_path, output_path, verbose=1):
 
 
 def nonoverlap(file_path, rep_paths, ouput_path, options=['-wa', '-s'], verbose=1):
-    # find CLIP-peaks that don't overlap with background peaks
+    """find non-overlapping peaks in file_path and rep_paths (can be multiple files)"""
 
     options_str = ''
     for option in options:
@@ -54,7 +56,7 @@ def nonoverlap(file_path, rep_paths, ouput_path, options=['-wa', '-s'], verbose=
 
 
 def overlap(file_path, rep_paths, output_path, options=['-wa', '-wb', '-s'], verbose=1):
-    # find CLIP-peaks that overlap between replicates 
+    """find overlapping peaks in file_path and rep_paths (can be multiple files)"""
 
     options_str = ''
     for option in options:
@@ -75,8 +77,9 @@ def overlap(file_path, rep_paths, output_path, options=['-wa', '-wb', '-s'], ver
 
 
 def enforce_constant_size(bed_path, output_path, window):
-    # load bed file
+    """generate a bed file where all peaks have same size centered on original peak"""
 
+    # load bed file
     f = open(bed_path, 'rb')
     df = pd.read_table(f, header=None)
     chrom = df[0].as_matrix().astype(str)
@@ -105,17 +108,15 @@ def enforce_constant_size(bed_path, output_path, window):
     df_new.to_csv(output_path, sep='\t', header=None, index=False)
 
 
+def to_fasta(bed_path, output_fasta, genome_path):
+    """extract sequences from bed files and save as fasta file """
+
+    os.system('bedtools getfasta -s -fi '+genome_path+' -bed '+bed_path+' -fo '+output_fasta)
+
+
 def count_bed_entries(file_path):
     with open(file_path, 'r') as f:
         counts = 0
         for line in f:
             counts += 1
     return counts
-
-
-def to_fasta(bed_path, output_fasta, genome_path):    
-    # extract sequences from bed files and save as fasta file 
-    os.system('bedtools getfasta -s -fi '+genome_path+' -bed '+bed_path+' -fo '+output_fasta)
-
-
-

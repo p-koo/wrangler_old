@@ -8,28 +8,33 @@ import numpy as np
 
 
 def predict_structure(fasta_path, profile_path, window):
+    """predict secondary structure profiles with RNAplfold modified scripts"""
 
     E_path = profile_path+'E_profile.txt'
+    # predict external loops
     os.system('E_RNAplfold -W '+str(window)+' -u 1 <'+fasta_path+' >'+E_path)
 
+    # predict hairpin loops
     H_path = profile_path+'H_profile.txt'
     os.system('H_RNAplfold -W '+str(window)+' -u 1 <'+fasta_path+' >'+H_path)
 
+    # predict internal loops
     I_path = profile_path+'I_profile.txt'
     os.system('I_RNAplfold -W '+str(window)+' -u 1 <'+fasta_path+' >'+I_path)
 
+    # predict multi-loops
     M_path = profile_path+ 'M_profile.txt'
     os.system('M_RNAplfold -W '+str(window)+' -u 1 <'+fasta_path+' >'+M_path)
 
 
 
 def merge_structural_profile(profile_path, merged_path):
-
+    """merge the secondary structure profiles into a single file"""
     def list_to_str(lst):
-        ''' Given a list, return the string of that list with tab separators 
+        ''' Given a list, return the string of that list with tab separators
         '''
         return reduce( (lambda s, f: s + '\t' + str(f)), lst, '')
-    
+
     # external loop profile
     E_path = profile_path+'E_profile.txt'
     fEprofile = open(E_path)
@@ -51,7 +56,7 @@ def merge_structural_profile(profile_path, merged_path):
     Mprofiles = fMprofile.readlines()
 
     num_seq = int(len(Eprofiles)/2)
-    
+
     # parse into a single file
     fhout = open(merged_path, 'w')
     for i in xrange(num_seq):
@@ -73,13 +78,14 @@ def merge_structural_profile(profile_path, merged_path):
 
 
 def extract_structural_profile(merged_path, num_seq, window):
+    """extract secondary structure profiles from a merged file and return a
+       numpy array """
 
     # parse further and load structural profile as np.array
     f = open(merged_path, 'r')
     structure = []
     for i in xrange(num_seq):
         seq = f.readline()
-
         paired = f.readline().strip().split('\t')
         hairpin = f.readline().strip().split('\t')
         internal = f.readline().strip().split('\t')
@@ -109,15 +115,16 @@ def extract_structural_profile(merged_path, num_seq, window):
 
 
 def RNAplfold_profile(fasta_path, profile_path, window):
+    """predict secondary structure profiles for sequences in a fasta file"""
 
     # predict secondary structural profiles
     predict_structure(fasta_path, profile_path, window)
- 
-    # generate merged secondary structure profile 
+
+    # generate merged secondary structure profile
     merged_path = profile_path+'_structure_profiles.txt'
     num_seq = merge_structural_profile(profile_path, merged_path)
 
-    # extract secondary structure profiles 
+    # extract secondary structure profiles
     structure = extract_structural_profile(merged_path, num_seq, window)
 
     return structure

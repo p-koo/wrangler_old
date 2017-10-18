@@ -9,3 +9,4 @@ from .peaks import *
 from .samtools import *
 from .structure import *
 from .fasta import *
+from .utils import *
