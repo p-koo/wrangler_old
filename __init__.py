@@ -10,3 +10,4 @@ from .samtools import *
 from .structure import *
 from .fasta import *
 from .utils import *
+from .hmmer import *

@@ -58,7 +58,7 @@ def parse_results(file_path):
     return names, scores, evalues
 
 
-def reformat(file_path, output_path, file_format='stockholm'):
+def reformat(file_path, output_path, file_format='stockholm', verbose=1):
     """use easel to reformat a file into another format"""
 
     #esl-reformat -o PF00011_train.sto stockholm PF00011_full_train.fa
