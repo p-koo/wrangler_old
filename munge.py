@@ -123,6 +123,9 @@ def save_dataset_hdf5(save_path, train, valid, test):
 
 
 def split_rnacompete_dataset(data, targets, experiment, valid_frac):
+    """split RNA compete dataset into set A sequences for training
+        and validation and set B sequences for testing."""
+
 	index = np.where(experiment == 'A')[0]
 	num_seq = len(index)
 	num_valid = int(num_seq*valid_frac)
