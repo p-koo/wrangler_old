@@ -76,12 +76,12 @@ def overlap(file_path, rep_paths, output_path, options=['-wa', '-wb', '-s'], ver
     os.system(cmd)
 
 
-def enforce_constant_size(bed_path, output_path, window):
+def enforce_constant_size(bed_path, output_path, window, compression=None):
     """generate a bed file where all peaks have same size centered on original peak"""
 
     # load bed file
     f = open(bed_path, 'rb')
-    df = pd.read_table(f, header=None)
+    df = pd.read_table(f, header=None, compression=compression)
     chrom = df[0].as_matrix().astype(str)
     start = df[1].as_matrix()
     end = df[2].as_matrix()
