@@ -82,9 +82,9 @@ def enforce_constant_size(bed_path, output_path, window, compression=None):
     # load bed file
     f = open(bed_path, 'rb')
     df = pd.read_table(f, header=None, compression=compression)
-    chrom = df[0].to_numpy().astype(str)
-    start = df[1].to_numpy()
-    end = df[2].to_numpy()
+    chrom = df[0].as_matrix().astype(str)
+    start = df[1].as_matrix()
+    end = df[2].as_matrix()
 
     # calculate center point and create dataframe
     middle = np.round((start + end)/2).astype(int)
@@ -97,7 +97,7 @@ def enforce_constant_size(bed_path, output_path, window, compression=None):
     # filter any negative start positions
     data = {}
     for i in range(len(df.columns)):
-        data[i] = df[i].to_numpy()
+        data[i] = df[i].as_matrix()
     data[1] = start
     data[2] = end
 
